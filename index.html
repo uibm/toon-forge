@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOON Forge - Transform JSON into Token-Efficient Format</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #e8e8e8;
+      min-height: 100vh;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    .bg-grid {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(254, 243, 192, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(254, 243, 192, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 50px;
+      position: relative;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .logo {
+      font-size: 3.5rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #fef3c0 0%, #f59e0b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -2px;
+      text-shadow: 0 0 40px rgba(254, 243, 192, 0.3);
+    }
+
+    .forge-badge {
+      background: linear-gradient(135deg, rgba(254, 243, 192, 0.15), rgba(245, 158, 11, 0.15));
+      border: 1px solid rgba(254, 243, 192, 0.3);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fef3c0;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .tagline {
+      color: #a0a0a0;
+      font-size: 1.2rem;
+      font-weight: 300;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .stats-dashboard {
+      background: linear-gradient(135deg, rgba(254, 243, 192, 0.05), rgba(245, 158, 11, 0.05));
+      border: 1px solid rgba(254, 243, 192, 0.2);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stats-dashboard::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #fef3c0, transparent);
+      animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 25px;
+    }
+
+    .stat-card {
+      text-align: center;
+      padding: 20px;
+      background: rgba(10, 10, 15, 0.6);
+      border-radius: 12px;
+      border: 1px solid rgba(254, 243, 192, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(254, 243, 192, 0.3);
+      box-shadow: 0 8px 24px rgba(254, 243, 192, 0.1);
+    }
+
+    .stat-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      opacity: 0.8;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fef3c0 0%, #f59e0b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .stat-value.positive {
+      background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-value.negative {
+      background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-subtitle {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+
+    .efficiency-bar {
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(10, 10, 15, 0.8);
+      border-radius: 12px;
+      border: 1px solid rgba(254, 243, 192, 0.1);
+    }
+
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(254, 243, 192, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4ade80, #22c55e);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      position: relative;
+    }
+
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: progress-shine 2s infinite;
+    }
+
+    @keyframes progress-shine {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    .panel {
+      background: rgba(20, 20, 28, 0.95);
+      border: 1px solid rgba(254, 243, 192, 0.15);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    .panel:hover {
+      border-color: rgba(254, 243, 192, 0.3);
+      box-shadow: 0 15px 50px rgba(254, 243, 192, 0.1);
+    }
+
+    .panel-header {
+      background: linear-gradient(135deg, rgba(254, 243, 192, 0.08), rgba(245, 158, 11, 0.08));
+      padding: 20px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(254, 243, 192, 0.15);
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .panel-actions .btn {
+      padding: 8px 16px;
+      fontSize: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      color: #fef3c0;
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+    }
+
+    .panel-icon {
+      font-size: 1.3rem;
+    }
+
+    .token-pill {
+      background: rgba(254, 243, 192, 0.15);
+      color: #fef3c0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border: 1px solid rgba(254, 243, 192, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .token-dot {
+      width: 6px;
+      height: 6px;
+      background: #fef3c0;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .panel-body {
+      padding: 0;
+      position: relative;
+    }
+
+    textarea {
+      width: 100%;
+      height: 450px;
+      background: #0f0f15;
+      color: #e8e8e8;
+      border: none;
+      padding: 25px;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
+      font-size: 0.92rem;
+      line-height: 1.7;
+      resize: vertical;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    textarea:focus {
+      background: #12121a;
+    }
+
+    textarea::placeholder {
+      color: #4b5563;
+    }
+
+    .output-display {
+      width: 100%;
+      height: 450px;
+      background: #0f0f15;
+      color: #e8e8e8;
+      border: none;
+      padding: 25px;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
+      font-size: 0.92rem;
+      line-height: 1.7;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    .output-display:empty::before {
+      content: 'Your TOON output will appear here...';
+      color: #4b5563;
+      font-style: italic;
+    }
+
+    .action-bar {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #fef3c0 0%, #f59e0b 100%);
+      color: #0a0a0f;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 15px rgba(254, 243, 192, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(254, 243, 192, 0.3);
+    }
+
+    .btn:active {
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(254, 243, 192, 0.1);
+      color: #fef3c0;
+      border: 1px solid rgba(254, 243, 192, 0.3);
+      box-shadow: none;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(254, 243, 192, 0.15);
+      border-color: rgba(254, 243, 192, 0.5);
+    }
+
+    .error-banner {
+      background: linear-gradient(135deg, rgba(248, 113, 113, 0.1), rgba(239, 68, 68, 0.1));
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      color: #fca5a5;
+      padding: 18px 24px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .error-icon {
+      font-size: 1.5rem;
+    }
+
+    .examples-section {
+      background: rgba(20, 20, 28, 0.6);
+      border: 1px solid rgba(254, 243, 192, 0.1);
+      border-radius: 16px;
+      padding: 25px;
+      text-align: center;
+    }
+
+    .examples-title {
+      color: #9ca3af;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    .examples-grid {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .example-chip {
+      background: rgba(254, 243, 192, 0.08);
+      color: #fef3c0;
+      border: 1px solid rgba(254, 243, 192, 0.2);
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .example-chip:hover {
+      background: rgba(254, 243, 192, 0.15);
+      border-color: rgba(254, 243, 192, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 30px 20px;
+      color: #6b7280;
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(254, 243, 192, 0.1);
+      margin-top: 40px;
+    }
+
+    .footer a {
+      color: #fef3c0;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .footer a:hover {
+      color: #f59e0b;
+    }
+
+    @media (max-width: 1024px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .logo {
+        font-size: 2.5rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding: 20px 15px;
+      }
+
+      .logo-section {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+      }
+
+      textarea, .output-display {
+        height: 350px;
+      }
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(254, 243, 192, 0.05);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(254, 243, 192, 0.2);
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(254, 243, 192, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Basic TOON encoder implementation
+    function encodeToToon(data, indent = 0) {
+      const spaces = '  '.repeat(indent);
+      
+      if (data === null) return 'null';
+      if (data === true) return 'true';
+      if (data === false) return 'false';
+      if (typeof data === 'number') return String(data);
+      if (typeof data === 'string') {
+        // Quote if contains special characters
+        if (data.includes(',') || data.includes(':') || data.includes('\n') || data.includes(' ')) {
+          return `"${data.replace(/"/g, '\\"')}"`;
+        }
+        return data;
+      }
+      
+      if (Array.isArray(data)) {
+        if (data.length === 0) return '[]';
+        
+        // Check if array of uniform objects (tabular format)
+        const isUniformObjects = data.length > 0 && 
+          data.every(item => typeof item === 'object' && item !== null && !Array.isArray(item));
+        
+        if (isUniformObjects) {
+          const firstKeys = Object.keys(data[0]).sort();
+          const allSameKeys = data.every(item => {
+            const keys = Object.keys(item).sort();
+            return keys.length === firstKeys.length && 
+                   keys.every((key, i) => key === firstKeys[i]);
+          });
+          
+          if (allSameKeys) {
+            // Tabular format
+            const fields = firstKeys.join(',');
+            const rows = data.map(item => {
+              return firstKeys.map(key => {
+                const val = item[key];
+                if (typeof val === 'string' && (val.includes(',') || val.includes(' '))) {
+                  return `"${val.replace(/"/g, '\\"')}"`;
+                }
+                return val === null ? 'null' : String(val);
+              }).join(',');
+            }).join('\n' + spaces + '  ');
+            
+            return `[${data.length}]{${fields}}:\n${spaces}  ${rows}`;
+          }
+        }
+        
+        // Check if array of primitives
+        const allPrimitives = data.every(item => 
+          typeof item !== 'object' || item === null
+        );
+        
+        if (allPrimitives) {
+          const items = data.map(item => {
+            if (typeof item === 'string' && (item.includes(',') || item.includes(' '))) {
+              return `"${item.replace(/"/g, '\\"')}"`;
+            }
+            return item === null ? 'null' : String(item);
+          }).join(',');
+          return `[${data.length}]: ${items}`;
+        }
+        
+        // Non-uniform array
+        return '[\n' + data.map(item => 
+          spaces + '  ' + encodeToToon(item, indent + 1)
+        ).join('\n') + '\n' + spaces + ']';
+      }
+      
+      if (typeof data === 'object') {
+        const entries = Object.entries(data);
+        if (entries.length === 0) return '{}';
+        
+        return entries.map(([key, value]) => {
+          const encodedValue = encodeToToon(value, indent + 1);
+          // Check if value is multiline
+          if (encodedValue.includes('\n')) {
+            return `${spaces}${key}:\n${spaces}  ${encodedValue}`;
+          }
+          return `${spaces}${key}: ${encodedValue}`;
+        }).join('\n');
+      }
+      
+      return String(data);
+    }
+
+    function encode(data) {
+      return encodeToToon(data, 0);
+    }
+
+    const EXAMPLES = {
+      simple: {
+        name: "Simple Array",
+        json: {
+          users: [
+            { id: 1, name: "Alice", role: "admin" },
+            { id: 2, name: "Bob", role: "user" },
+            { id: 3, name: "Charlie", role: "user" }
+          ]
+        }
+      },
+      nested: {
+        name: "Nested Structure",
+        json: {
+          context: {
+            task: "Our favorite hikes together",
+            location: "Boulder",
+            season: "spring_2025"
+          },
+          friends: ["ana", "luis", "sam"],
+          hikes: [
+            {
+              id: 1,
+              name: "Blue Lake Trail",
+              distanceKm: 7.5,
+              elevationGain: 320,
+              companion: "ana",
+              wasSunny: true
+            },
+            {
+              id: 2,
+              name: "Ridge Overlook",
+              distanceKm: 9.2,
+              elevationGain: 540,
+              companion: "luis",
+              wasSunny: false
+            }
+          ]
+        }
+      },
+      api: {
+        name: "API Response",
+        json: {
+          status: "success",
+          data: {
+            repositories: [
+              { id: 1, name: "toon-format", stars: 1250, language: "TypeScript" },
+              { id: 2, name: "awesome-toon", stars: 890, language: "JavaScript" },
+              { id: 3, name: "toon-python", stars: 420, language: "Python" }
+            ]
+          },
+          meta: {
+            total: 3,
+            timestamp: "2025-01-15T10:30:00Z"
+          }
+        }
+      }
+    };
+
+    function countTokens(text) {
+      // Rough approximation: split on whitespace and punctuation
+      return text.split(/[\s,{}[\]:]+/).filter(t => t.length > 0).length;
+    }
+
+    function ToonForge() {
+      const [jsonInput, setJsonInput] = useState(JSON.stringify(EXAMPLES.simple.json, null, 2));
+      const [toonOutput, setToonOutput] = useState('');
+      const [error, setError] = useState('');
+      const [jsonTokens, setJsonTokens] = useState(0);
+      const [toonTokens, setToonTokens] = useState(0);
+
+      useEffect(() => {
+        convertToToon(jsonInput);
+      }, []);
+
+      const convertToToon = (input) => {
+        try {
+          setError('');
+          const parsed = JSON.parse(input);
+          const toon = encode(parsed);
+          setToonOutput(toon);
+          
+          const jTokens = countTokens(input);
+          const tTokens = countTokens(toon);
+          setJsonTokens(jTokens);
+          setToonTokens(tTokens);
+        } catch (e) {
+          setError(`Error: ${e.message}`);
+          setToonOutput('');
+          setToonTokens(0);
+        }
+      };
+
+      const handleJsonChange = (e) => {
+        const value = e.target.value;
+        setJsonInput(value);
+        convertToToon(value);
+      };
+
+      const loadExample = (key) => {
+        const example = EXAMPLES[key];
+        const formatted = JSON.stringify(example.json, null, 2);
+        setJsonInput(formatted);
+        convertToToon(formatted);
+      };
+
+      const copyToClipboard = () => {
+        navigator.clipboard.writeText(toonOutput);
+      };
+
+      const downloadToon = () => {
+        const blob = new Blob([toonOutput], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'output.toon';
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const clearInput = () => {
+        setJsonInput('');
+        setToonOutput('');
+        setJsonTokens(0);
+        setToonTokens(0);
+      };
+
+      const savings = jsonTokens > 0 ? ((jsonTokens - toonTokens) / jsonTokens * 100).toFixed(1) : 0;
+      const savingsClass = savings > 0 ? 'positive' : savings < 0 ? 'negative' : '';
+      const efficiencyPercent = jsonTokens > 0 ? Math.min(100, Math.max(0, parseFloat(savings))) : 0;
+
+      return (
+        <>
+          <div className="bg-grid"></div>
+          <div className="container">
+            <div className="header">
+              <div className="logo-section">
+                <div className="logo">TOON FORGE</div>
+                <div className="forge-badge">⚡ Token Optimizer</div>
+              </div>
+              <p className="tagline">
+                Transform verbose JSON into token-efficient TOON format.<br/>
+                Save tokens. Save costs. Keep structure.
+              </p>
+            </div>
+
+            {error && (
+              <div className="error-banner">
+                <span className="error-icon">⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="workspace">
+              <div className="panel">
+                <div className="panel-header">
+                  <div className="panel-title">
+                    <span className="panel-icon">📝</span>
+                    <span>JSON Input</span>
+                  </div>
+                  <div className="token-pill">
+                    <span className="token-dot"></span>
+                    {jsonTokens} tokens
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <textarea
+                    value={jsonInput}
+                    onChange={handleJsonChange}
+                    placeholder="Paste your JSON here..."
+                    spellCheck="false"
+                  />
+                </div>
+              </div>
+
+              <div className="panel">
+                <div className="panel-header">
+                  <div className="panel-title">
+                    <span className="panel-icon">⚡</span>
+                    <span>TOON Output</span>
+                  </div>
+                  <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+                    <div className="token-pill">
+                      <span className="token-dot"></span>
+                      {toonTokens} tokens
+                    </div>
+                    <button className="btn" onClick={copyToClipboard} style={{padding: '8px 16px', fontSize: '0.85rem'}}>
+                      📋 Copy
+                    </button>
+                    <button className="btn btn-secondary" onClick={downloadToon} style={{padding: '8px 16px', fontSize: '0.85rem'}}>
+                      💾 Download
+                    </button>
+                    <button className="btn btn-secondary" onClick={clearInput} style={{padding: '8px 16px', fontSize: '0.85rem'}}>
+                      🗑️ Clear
+                    </button>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <div className="output-display">{toonOutput}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="stats-dashboard">
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="stat-icon">📄</div>
+                  <div className="stat-label">JSON Tokens</div>
+                  <div className="stat-value">{jsonTokens.toLocaleString()}</div>
+                  <div className="stat-subtitle">Input format</div>
+                </div>
+                
+                <div className="stat-card">
+                  <div className="stat-icon">⚡</div>
+                  <div className="stat-label">TOON Tokens</div>
+                  <div className="stat-value">{toonTokens.toLocaleString()}</div>
+                  <div className="stat-subtitle">Optimized format</div>
+                </div>
+                
+                <div className="stat-card">
+                  <div className="stat-icon">{savings > 0 ? '✨' : savings < 0 ? '⚠️' : '➖'}</div>
+                  <div className="stat-label">Token Savings</div>
+                  <div className={`stat-value ${savingsClass}`}>
+                    {savings > 0 ? '-' : savings < 0 ? '+' : ''}{Math.abs(savings)}%
+                  </div>
+                  <div className="stat-subtitle">
+                    {savings > 0 ? `${(jsonTokens - toonTokens).toLocaleString()} tokens saved` : 
+                     savings < 0 ? 'More tokens used' : 'No change'}
+                  </div>
+                </div>
+              </div>
+
+              {savings > 0 && (
+                <div className="efficiency-bar">
+                  <div className="bar-label">
+                    <span>Efficiency Gain</span>
+                    <span>{savings}% reduction</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{width: `${efficiencyPercent}%`}}></div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="examples-section">
+              <div className="examples-title">Try Examples</div>
+              <div className="examples-grid">
+                {Object.keys(EXAMPLES).map(key => (
+                  <button
+                    key={key}
+                    className="example-chip"
+                    onClick={() => loadExample(key)}
+                  >
+                    {EXAMPLES[key].name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="footer">
+              Built with <3 for the TOON community • 
+              <a href="https://github.com/toon-format/toon" target="_blank" rel="noopener noreferrer"> Learn More</a>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    ReactDOM.render(<ToonForge />, document.getElementById('root'));
+  </script>
+</body>
+</html>
