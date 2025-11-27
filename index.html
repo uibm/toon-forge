@@ -273,7 +273,7 @@
 
     .panel-actions .btn {
       padding: 8px 16px;
-      fontSize: 0.85rem;
+      font-size: 0.85rem;
       white-space: nowrap;
     }
 
@@ -821,18 +821,18 @@
                     <span className="panel-icon">⚡</span>
                     <span>TOON Output</span>
                   </div>
-                  <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+                  <div className="panel-actions">
                     <div className="token-pill">
                       <span className="token-dot"></span>
                       {toonTokens} tokens
                     </div>
-                    <button className="btn" onClick={copyToClipboard} style={{padding: '8px 16px', fontSize: '0.85rem'}}>
+                    <button className="btn" onClick={copyToClipboard}>
                       📋 Copy
                     </button>
-                    <button className="btn btn-secondary" onClick={downloadToon} style={{padding: '8px 16px', fontSize: '0.85rem'}}>
+                    <button className="btn btn-secondary" onClick={downloadToon}>
                       💾 Download
                     </button>
-                    <button className="btn btn-secondary" onClick={clearInput} style={{padding: '8px 16px', fontSize: '0.85rem'}}>
+                    <button className="btn btn-secondary" onClick={clearInput}>
                       🗑️ Clear
                     </button>
                   </div>
@@ -901,7 +901,7 @@
             </div>
 
             <div className="footer">
-              Built with <3 for the TOON community • 
+              Built with 🔥 for the TOON community • 
               <a href="https://github.com/toon-format/toon" target="_blank" rel="noopener noreferrer"> Learn More</a>
             </div>
           </div>
